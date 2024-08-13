@@ -1,0 +1,26 @@
+-r requirements-dev.txt
+ipykernel
+nbconvert
+nbformat
+pytest-cov>=5
+pytest-asyncio
+replicate
+pillow
+chromadb
+sentence_transformers
+pypdf
+ipython
+beautifulsoup4
+markdownify
+sympy
+wolframalpha
+flaml[blendsearch]
+diskcache
+termcolor
+flaml
+numpy>=1.17.0,<2
+tiktoken
+pydantic>=1.10,<3,!=2.6.0
+packaging
+docker
+vertexai
