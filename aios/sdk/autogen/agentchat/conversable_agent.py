@@ -13,6 +13,8 @@ from openai import BadRequestError
 
 from autogen.agentchat.chat import _post_process_carryover_item
 from autogen.exception_utils import InvalidCarryOverType, SenderRequired
+from pyopenagi.agents.agent_process import AgentProcessFactory
+from pyopenagi.utils.chat_template import Query
 
 from .._pydantic import model_dump
 from ..cache.cache import AbstractCache
@@ -36,6 +38,7 @@ from ..runtime_logging import log_event, log_function_use, log_new_agent, loggin
 from .agent import Agent, LLMAgent
 from .chat import ChatResult, a_initiate_chats, initiate_chats
 from .utils import consolidate_chat_info, gather_usage_summary
+from pyopenagi.agents.base_agent import BaseAgent
 
 __all__ = ("ConversableAgent",)
 
@@ -44,7 +47,7 @@ logger = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-class ConversableAgent(LLMAgent):
+class ConversableAgent(LLMAgent, BaseAgent):
     """(In preview) A class for generic conversable agents which can be configured as assistant or user proxy.
 
     After receiving each message, the agent will send a reply to the sender unless the msg is a termination msg.
@@ -79,6 +82,7 @@ class ConversableAgent(LLMAgent):
         description: Optional[str] = None,
         chat_messages: Optional[Dict[Agent, List[Dict]]] = None,
         silent: Optional[bool] = None,
+        agent_process_factory: Optional[AgentProcessFactory] = None,
     ):
         """
         Args:
@@ -130,6 +134,10 @@ class ConversableAgent(LLMAgent):
             silent (bool or None): (Experimental) whether to print the message sent. If None, will use the value of
                 silent in each function.
         """
+        if agent_process_factory:
+            self.agent_process_factory = agent_process_factory
+        self.agent_name = name
+
         # we change code_execution_config below and we have to make sure we don't change the input
         # in case of UserProxyAgent, without this we could even change the default value {}
         code_execution_config = (
@@ -184,7 +192,7 @@ class ConversableAgent(LLMAgent):
         self._reply_func_list = []
         self._human_input = []
         self.reply_at_receive = defaultdict(bool)
-        self.register_reply([Agent, None], ConversableAgent.generate_oai_reply)
+        self.register_reply([Agent, None], ConversableAgent.generate_oai_reply_aios)
         self.register_reply([Agent, None], ConversableAgent.a_generate_oai_reply, ignore_async_in_sync_chat=True)
 
         # Setting up code execution.
@@ -1352,6 +1360,29 @@ class ConversableAgent(LLMAgent):
         extracted_response = self._generate_oai_reply_from_client(
             client, self._oai_system_message + messages, self.client_cache
         )
+        return (False, None) if extracted_response is None else (True, extracted_response)
+
+    def generate_oai_reply_aios(
+        self,
+        messages: Optional[List[Dict]] = None,
+        sender: Optional[Agent] = None,
+        config: Optional[OpenAIWrapper] = None,
+    ) -> Tuple[bool, Union[str, Dict, None]]:
+        """Generate a reply using autogen.oai."""
+        client = self.client if config is None else config
+        if client is None:
+            return False, None
+        if messages is None:
+            messages = self._oai_messages[sender]
+
+        response, start_times, end_times, waiting_times, turnaround_times = self.get_response(
+            query=Query(
+                messages=self._oai_system_message + messages,
+                tools=None
+            )
+        )
+
+        extracted_response = response.response_message
         return (False, None) if extracted_response is None else (True, extracted_response)
 
     def _generate_oai_reply_from_client(self, llm_client, messages, cache) -> Union[str, Dict, None]:
