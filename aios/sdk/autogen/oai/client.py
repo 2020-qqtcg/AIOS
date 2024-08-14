@@ -9,12 +9,15 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 from flaml.automl.logger import logger_formatter
 from pydantic import BaseModel
 
-from autogen.cache import Cache
-from autogen.io.base import IOStream
-from autogen.logger.logger_utils import get_current_ts
-from autogen.oai.openai_utils import OAI_PRICE1K, get_key, is_valid_api_key
-from autogen.runtime_logging import log_chat_completion, log_new_client, log_new_wrapper, logging_enabled
-from autogen.token_count_utils import count_token
+from aios.sdk.autogen.cache import Cache
+from aios.sdk.autogen.io.base import IOStream
+from aios.sdk.autogen.logger.logger_utils import get_current_ts
+from aios.sdk.autogen.oai.openai_utils import OAI_PRICE1K, get_key, is_valid_api_key
+from aios.sdk.autogen.runtime_logging import log_chat_completion, log_new_client, log_new_wrapper, logging_enabled
+from aios.sdk.autogen.token_count_utils import count_token
+from pyopenagi.agents.agent_process import AgentProcessFactory
+from pyopenagi.agents.external_call_core import ExternalCallCore
+from pyopenagi.utils.chat_template import Query
 
 TOOL_ENABLED = False
 try:
@@ -128,7 +131,7 @@ class ModelClient(Protocol):
     def create(self, params: Dict[str, Any]) -> ModelClientResponseProtocol: ...  # pragma: no cover
 
     def message_retrieval(
-        self, response: ModelClientResponseProtocol
+            self, response: ModelClientResponseProtocol
     ) -> Union[List[str], List[ModelClient.ModelClientResponseProtocol.Choice.Message]]:
         """
         Retrieve and return a list of strings or a list of Choice.Message from the response.
@@ -157,16 +160,16 @@ class OpenAIClient:
     def __init__(self, client: Union[OpenAI, AzureOpenAI]):
         self._oai_client = client
         if (
-            not isinstance(client, openai.AzureOpenAI)
-            and str(client.base_url).startswith(OPEN_API_BASE_URL_PREFIX)
-            and not is_valid_api_key(self._oai_client.api_key)
+                not isinstance(client, openai.AzureOpenAI)
+                and str(client.base_url).startswith(OPEN_API_BASE_URL_PREFIX)
+                and not is_valid_api_key(self._oai_client.api_key)
         ):
             logger.warning(
                 "The API key specified is not a valid OpenAI format; it won't work with the OpenAI-hosted model."
             )
 
     def message_retrieval(
-        self, response: Union[ChatCompletion, Completion]
+            self, response: Union[ChatCompletion, Completion]
     ) -> Union[List[str], List[ChatCompletionMessage]]:
         """Retrieve the messages from the response."""
         choices = response.choices
@@ -184,7 +187,8 @@ class OpenAIClient:
             ]
         else:
             return [  # type: ignore [return-value]
-                choice.message if choice.message.function_call is not None else choice.message.content  # type: ignore [union-attr]
+                choice.message if choice.message.function_call is not None else choice.message.content
+                # type: ignore [union-attr]
                 for choice in choices
             ]
 
@@ -338,7 +342,8 @@ class OpenAIClient:
         tmp_price1K = OAI_PRICE1K[model]
         # First value is input token rate, second value is output token rate
         if isinstance(tmp_price1K, tuple):
-            return (tmp_price1K[0] * n_input_tokens + tmp_price1K[1] * n_output_tokens) / 1000  # type: ignore [no-any-return]
+            return (tmp_price1K[0] * n_input_tokens + tmp_price1K[
+                1] * n_output_tokens) / 1000  # type: ignore [no-any-return]
         return tmp_price1K * (n_input_tokens + n_output_tokens) / 1000  # type: ignore [operator]
 
     @staticmethod
@@ -352,7 +357,7 @@ class OpenAIClient:
         }
 
 
-class OpenAIWrapper:
+class OpenAIWrapper(ExternalCallCore):
     """A wrapper class for openai client."""
 
     extra_kwargs = {
@@ -374,7 +379,11 @@ class OpenAIWrapper:
     total_usage_summary: Optional[Dict[str, Any]] = None
     actual_usage_summary: Optional[Dict[str, Any]] = None
 
-    def __init__(self, *, config_list: Optional[List[Dict[str, Any]]] = None, **base_config: Any):
+    def __init__(self, *,
+                 config_list: Optional[List[Dict[str, Any]]] = None,
+                 agent_process_factory: Optional[AgentProcessFactory] = None,
+                 agent_name: Optional[str],
+                 **base_config: Any):
         """
         Args:
             config_list: a list of config dicts to override the base_config.
@@ -406,7 +415,8 @@ class OpenAIWrapper:
                 and additional kwargs.
                 When using OpenAI or Azure OpenAI endpoints, please specify a non-empty 'model' either in `base_config` or in each config of `config_list`.
         """
-
+        if agent_name and agent_process_factory:
+            super().__init__(agent_name, agent_process_factory, "")
         if logging_enabled():
             log_new_wrapper(self, locals())
         openai_config, extra_kwargs = self._separate_openai_config(base_config)
@@ -416,16 +426,7 @@ class OpenAIWrapper:
         self._clients: List[ModelClient] = []
         self._config_list: List[Dict[str, Any]] = []
 
-        if config_list:
-            config_list = [config.copy() for config in config_list]  # make a copy before modifying
-            for config in config_list:
-                self._register_default_client(config, openai_config)  # could modify the config
-                self._config_list.append(
-                    {**extra_kwargs, **{k: v for k, v in config.items() if k not in self.openai_kwargs}}
-                )
-        else:
-            self._register_default_client(extra_kwargs, openai_config)
-            self._config_list = [extra_kwargs]
+        self._config_list = [extra_kwargs]
         self.wrapper_id = id(self)
 
     def _separate_openai_config(self, config: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -556,10 +557,10 @@ class OpenAIWrapper:
 
     @classmethod
     def instantiate(
-        cls,
-        template: Optional[Union[str, Callable[[Dict[str, Any]], str]]],
-        context: Optional[Dict[str, Any]] = None,
-        allow_format_str_template: Optional[bool] = False,
+            cls,
+            template: Optional[Union[str, Callable[[Dict[str, Any]], str]]],
+            context: Optional[Dict[str, Any]] = None,
+            allow_format_str_template: Optional[bool] = False,
     ) -> Optional[str]:
         if not context or template is None:
             return template  # type: ignore [return-value]
@@ -649,7 +650,7 @@ class OpenAIWrapper:
             raise RuntimeError(
                 f"Model client(s) {non_activated} are not activated. Please register the custom model clients using `register_model_client` or filter them out form the config list."
             )
-        for i, client in enumerate(self._clients):
+        for i, client in enumerate([None]):
             # merge the input config with the i-th config in the config list
             full_config = {**config, **self._config_list[i]}
             # separate the config into create_config and extra_kwargs
@@ -674,9 +675,6 @@ class OpenAIWrapper:
                 )
                 price = (price, price)
 
-            total_usage = None
-            actual_usage = None
-
             cache_client = None
             if cache is not None:
                 # Use the cache object if provided.
@@ -694,14 +692,14 @@ class OpenAIWrapper:
                     response: ModelClient.ModelClientResponseProtocol = cache.get(key, None)
 
                     if response is not None:
-                        response.message_retrieval_function = client.message_retrieval
-                        try:
-                            response.cost  # type: ignore [attr-defined]
-                        except AttributeError:
-                            # update attribute if cost is not calculated
-                            response.cost = client.cost(response)
-                            cache.set(key, response)
-                        total_usage = client.get_usage(response)
+                        # response.message_retrieval_function = client.message_retrieval
+                        # try:
+                        #     response.cost  # type: ignore [attr-defined]
+                        # except AttributeError:
+                        #     # update attribute if cost is not calculated
+                        #     response.cost = client.cost(response)
+                        #     cache.set(key, response)
+                        # total_usage = client.get_usage(response)
 
                         if logging_enabled():
                             # Log the cache hit
@@ -722,14 +720,20 @@ class OpenAIWrapper:
                         pass_filter = filter_func is None or filter_func(context=context, response=response)
                         if pass_filter or i == last:
                             # Return the response if it passes the filter or it is the last client
-                            response.config_id = i
-                            response.pass_filter = pass_filter
-                            self._update_usage(actual_usage=actual_usage, total_usage=total_usage)
+                            # response.config_id = i
+                            # response.pass_filter = pass_filter
+                            # self._update_usage(actual_usage=actual_usage, total_usage=total_usage)
                             return response
                         continue  # filter is not passed; try the next config
             try:
                 request_ts = get_current_ts()
-                response = client.create(params)
+                response, start_times, end_times, waiting_times, turnaround_times = self.get_response(
+                    query=Query(
+                        messages=params['messages'],
+                        tools=(params["tools"] if "tools" in params else None)
+                    )
+                )
+                response = {'content': response.response_message, 'tool_calls': response.tool_calls}
             except APITimeoutError as err:
                 logger.debug(f"config {i} timed out", exc_info=True)
                 if i == last:
@@ -758,14 +762,14 @@ class OpenAIWrapper:
                 if i == last:
                     raise
             else:
-                # add cost calculation before caching no matter filter is passed or not
-                if price is not None:
-                    response.cost = self._cost_with_customized_price(response, price)
-                else:
-                    response.cost = client.cost(response)
-                actual_usage = client.get_usage(response)
-                total_usage = actual_usage.copy() if actual_usage is not None else total_usage
-                self._update_usage(actual_usage=actual_usage, total_usage=total_usage)
+                # # add cost calculation before caching no matter filter is passed or not
+                # if price is not None:
+                #     response.cost = self._cost_with_customized_price(response, price)
+                # else:
+                #     response.cost = client.cost(response)
+                # actual_usage = client.get_usage(response)
+                # total_usage = actual_usage.copy() if actual_usage is not None else total_usage
+                # self._update_usage(actual_usage=actual_usage, total_usage=total_usage)
                 if cache_client is not None:
                     # Cache the response
                     with cache_client as cache:
@@ -785,20 +789,20 @@ class OpenAIWrapper:
                         start_time=request_ts,
                     )
 
-                response.message_retrieval_function = client.message_retrieval
+                # response.message_retrieval_function = client.message_retrieval
                 # check the filter
                 pass_filter = filter_func is None or filter_func(context=context, response=response)
                 if pass_filter or i == last:
                     # Return the response if it passes the filter or it is the last client
-                    response.config_id = i
-                    response.pass_filter = pass_filter
+                    # response.config_id = i
+                    # response.pass_filter = pass_filter
                     return response
                 continue  # filter is not passed; try the next config
         raise RuntimeError("Should not reach here.")
 
     @staticmethod
     def _cost_with_customized_price(
-        response: ModelClient.ModelClientResponseProtocol, price_1k: Tuple[float, float]
+            response: ModelClient.ModelClientResponseProtocol, price_1k: Tuple[float, float]
     ) -> None:
         """If a customized cost is passed, overwrite the cost in the response."""
         n_input_tokens = response.usage.prompt_tokens if response.usage is not None else 0  # type: ignore [union-attr]
@@ -843,9 +847,9 @@ class OpenAIWrapper:
 
     @staticmethod
     def _update_function_call_from_chunk(
-        function_call_chunk: Union[ChoiceDeltaToolCallFunction, ChoiceDeltaFunctionCall],
-        full_function_call: Optional[Dict[str, Any]],
-        completion_tokens: int,
+            function_call_chunk: Union[ChoiceDeltaToolCallFunction, ChoiceDeltaFunctionCall],
+            full_function_call: Optional[Dict[str, Any]],
+            completion_tokens: int,
     ) -> Tuple[Dict[str, Any], int]:
         """Update the function call from the chunk.
 
@@ -874,9 +878,9 @@ class OpenAIWrapper:
 
     @staticmethod
     def _update_tool_calls_from_chunk(
-        tool_calls_chunk: ChoiceDeltaToolCall,
-        full_tool_call: Optional[Dict[str, Any]],
-        completion_tokens: int,
+            tool_calls_chunk: ChoiceDeltaToolCall,
+            full_tool_call: Optional[Dict[str, Any]],
+            completion_tokens: int,
     ) -> Tuple[Dict[str, Any], int]:
         """Update the tool call from the chunk.
 
@@ -1010,7 +1014,7 @@ class OpenAIWrapper:
 
     @classmethod
     def extract_text_or_completion_object(
-        cls, response: ModelClient.ModelClientResponseProtocol
+            cls, response: ModelClient.ModelClientResponseProtocol
     ) -> Union[List[str], List[ModelClient.ModelClientResponseProtocol.Choice.Message]]:
         """Extract the text or ChatCompletion objects from a completion or chat response.
 
@@ -1020,4 +1024,4 @@ class OpenAIWrapper:
         Returns:
             A list of text, or a list of ChatCompletion objects if function_call/tool_calls are present.
         """
-        return response.message_retrieval_function(response)
+        return [response]

@@ -91,7 +91,6 @@ class UserProxyAgent(ConversableAgent):
             human_input_mode=human_input_mode,
             function_map=function_map,
             code_execution_config=code_execution_config,
-            llm_config=llm_config,
             default_auto_reply=default_auto_reply,
             description=(
                 description if description is not None else self.DEFAULT_USER_PROXY_AGENT_DESCRIPTIONS[human_input_mode]

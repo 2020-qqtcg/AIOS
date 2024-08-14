@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, 
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
-from autogen.logger.base_logger import BaseLogger, LLMConfig
-from autogen.logger.logger_factory import LoggerFactory
+from aios.sdk.autogen.logger.base_logger import BaseLogger, LLMConfig
+from aios.sdk.autogen.logger.logger_factory import LoggerFactory
 
 if TYPE_CHECKING:
     from autogen import Agent, ConversableAgent, OpenAIWrapper

@@ -14,7 +14,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import docker
 
-from autogen import oai
+from aios.sdk.autogen import oai
 
 from .types import UserMessageImageContentPart, UserMessageTextContentPart
 

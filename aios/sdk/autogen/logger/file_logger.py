@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar, Union
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
-from autogen.logger.base_logger import BaseLogger
-from autogen.logger.logger_utils import get_current_ts, to_dict
+from aios.sdk.autogen.logger.base_logger import BaseLogger
+from aios.sdk.autogen.logger.logger_utils import get_current_ts, to_dict
 from .base_logger import LLMConfig
 
 if TYPE_CHECKING:

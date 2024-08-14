@@ -76,4 +76,4 @@ class CacheFactory:
 
         # Default to DiskCache if neither Redis nor Cosmos DB configurations are provided
         path = os.path.join(cache_path_root, str(seed))
-        return DiskCache(os.path.join(".", path))
+        return DiskCache(os.path.join("", path))

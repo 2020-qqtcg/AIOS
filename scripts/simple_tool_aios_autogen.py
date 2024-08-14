@@ -6,17 +6,17 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import warnings
-
 from dotenv import load_dotenv
-
 from aios.hooks.llm import useKernel, useFIFOScheduler
 from aios.utils.utils import delete_directories
 from aios.utils.utils import (
     parse_global_args,
 )
-from aios.sdk.autogen import config_list_from_json, ConversableAgent, UserProxyAgent
+from aios.sdk.autogen import ConversableAgent
 from pyopenagi.agents.agent_process import AgentProcessFactory
+from typing import Annotated, Literal
 
+Operator = Literal["+", "-", "*", "/"]
 
 def clean_cache(root_directory):
     targets = {
@@ -26,6 +26,19 @@ def clean_cache(root_directory):
         "context_restoration",
     }
     delete_directories(root_directory, targets)
+
+
+def calculator(a: int, b: int, operator: Annotated[Operator, "operator"]) -> int:
+    if operator == "+":
+        return a + b
+    elif operator == "-":
+        return a - b
+    elif operator == "*":
+        return a * b
+    elif operator == "/":
+        return int(a / b)
+    else:
+        raise ValueError("Invalid operator")
 
 
 def main():
@@ -65,22 +78,37 @@ def main():
 
     process_factory = AgentProcessFactory()
 
-    config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST")
+    # Let's first define the assistant agent that suggests tool calls.
+    assistant = ConversableAgent(
+        name="Assistant",
+        system_message="You are a helpful AI assistant. "
+                       "You can help with simple calculations. "
+                       "Return 'TERMINATE' when the task is done.",
+        agent_process_factory=process_factory
+    )
 
-    # Create the agent that uses the LLM.
-    assistant = ConversableAgent("agent",
-                                 llm_config={"config_list": config_list},
-                                 agent_process_factory=process_factory)
+    # The user proxy agent is used for interacting with the assistant agent
+    # and executes tool calls.
+    user_proxy = ConversableAgent(
+        name="User",
+        is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],
+        human_input_mode="NEVER",
+    )
 
-    # Create the agent that represents the user in the conversation.
-    user_proxy = UserProxyAgent("user", code_execution_config=False)
+    # Register the tool signature with the assistant agent.
+    assistant.register_for_llm(name="calculator", description="A simple calculator")(calculator)
+
+    # Register the tool function with the user proxy agent.
+    user_proxy.register_for_execution(name="calculator")(calculator)
 
     startScheduler()
 
-    # Let the assistant start the conversation.  It will end when the user types exit.
-    assistant.initiate_chat(user_proxy, message="How can I help you today?")
+    # Generate a reply.
+    chat_result = user_proxy.initiate_chat(assistant, message="What is 2 + 1?")
 
     stopScheduler()
+
+    print(chat_result)
 
     clean_cache(root_directory="./")
 

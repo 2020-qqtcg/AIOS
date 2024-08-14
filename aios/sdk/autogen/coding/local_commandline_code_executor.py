@@ -12,7 +12,7 @@ from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
 
 from typing_extensions import ParamSpec
 
-from autogen.coding.func_with_reqs import (
+from aios.sdk.autogen.coding.func_with_reqs import (
     FunctionWithRequirements,
     FunctionWithRequirementsStr,
     _build_python_functions_file,
@@ -67,7 +67,7 @@ $functions"""
         self,
         timeout: int = 60,
         virtual_env_context: Optional[SimpleNamespace] = None,
-        work_dir: Union[Path, str] = Path("."),
+        work_dir: Union[Path, str] = Path(""),
         functions: List[Union[FunctionWithRequirements[Any, A], Callable[..., Any], FunctionWithRequirementsStr]] = [],
         functions_module: str = "functions",
         execution_policies: Optional[Dict[str, bool]] = None,

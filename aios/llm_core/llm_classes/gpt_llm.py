@@ -10,6 +10,7 @@ import openai
 from pyopenagi.utils.chat_template import Response
 import json
 
+
 class GPTLLM(BaseLLM):
 
     def __init__(self, llm_name: str,
@@ -36,16 +37,18 @@ class GPTLLM(BaseLLM):
                 parsed_tool_calls.append(
                     {
                         "name": function_name,
-                        "parameters": function_args
+                        "parameters": function_args,
+                        "type": tool_call.type,
+                        "id": tool_call.id
                     }
                 )
             return parsed_tool_calls
         return None
 
     def process(self,
-            agent_process,
-            temperature=0.0
-        ):
+                agent_process,
+                temperature=0.0
+                ):
         # ensures the model is the current one
         assert re.search(r'gpt', self.model_name, re.IGNORECASE)
 
@@ -56,16 +59,16 @@ class GPTLLM(BaseLLM):
         # print(messages)
         self.logger.log(
             f"{agent_process.agent_name} is switched to executing.\n",
-            level = "executing"
+            level="executing"
         )
         time.sleep(2)
         try:
             response = self.model.chat.completions.create(
                 model=self.model_name,
-                messages = messages,
-                tools = agent_process.query.tools,
-                tool_choice = "required" if agent_process.query.tools else None,
-                max_tokens = self.max_new_tokens
+                messages=messages,
+                tools=agent_process.query.tools,
+                tool_choice="required" if agent_process.query.tools else None,
+                max_tokens=self.max_new_tokens
             )
             response_message = response.choices[0].message.content
             tool_calls = self.parse_tool_calls(
@@ -75,38 +78,38 @@ class GPTLLM(BaseLLM):
             # print(response.choices[0].message)
             agent_process.set_response(
                 Response(
-                    response_message = response_message,
-                    tool_calls = tool_calls
+                    response_message=response_message,
+                    tool_calls=tool_calls
                 )
             )
         except openai.APIConnectionError as e:
             agent_process.set_response(
                 Response(
-                    response_message = f"Server connection error: {e.__cause__}"
+                    response_message=f"Server connection error: {e.__cause__}"
                 )
             )
         except openai.RateLimitError as e:
             agent_process.set_response(
                 Response(
-                    response_message = f"OpenAI RATE LIMIT error {e.status_code}: (e.response)"
+                    response_message=f"OpenAI RATE LIMIT error {e.status_code}: (e.response)"
                 )
             )
         except openai.APIStatusError as e:
             agent_process.set_response(
                 Response(
-                    response_message = f"OpenAI STATUS error {e.status_code}: (e.response)"
+                    response_message=f"OpenAI STATUS error {e.status_code}: (e.response)"
                 )
             )
         except openai.BadRequestError as e:
             agent_process.set_response(
                 Response(
-                    response_message = f"OpenAI BAD REQUEST error {e.status_code}: (e.response)"
+                    response_message=f"OpenAI BAD REQUEST error {e.status_code}: (e.response)"
                 )
             )
         except Exception as e:
             agent_process.set_response(
                 Response(
-                    response_message = f"An unexpected error occurred: {e}"
+                    response_message=f"An unexpected error occurred: {e}"
                 )
             )
 

@@ -11,19 +11,19 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, TypeVar, Uni
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
-from autogen.logger.base_logger import BaseLogger
-from autogen.logger.logger_utils import get_current_ts, to_dict
+from aios.sdk.autogen.logger.base_logger import BaseLogger
+from aios.sdk.autogen.logger.logger_utils import get_current_ts, to_dict
 
 from .base_logger import LLMConfig
 
 if TYPE_CHECKING:
-    from autogen import Agent, ConversableAgent, OpenAIWrapper
-    from autogen.oai.anthropic import AnthropicClient
-    from autogen.oai.cohere import CohereClient
-    from autogen.oai.gemini import GeminiClient
-    from autogen.oai.groq import GroqClient
-    from autogen.oai.mistral import MistralAIClient
-    from autogen.oai.together import TogetherClient
+    from aios.sdk.autogen import Agent, ConversableAgent, OpenAIWrapper
+    from aios.sdk.autogen.oai.anthropic import AnthropicClient
+    from aios.sdk.autogen.oai.cohere import CohereClient
+    from aios.sdk.autogen.oai.gemini import GeminiClient
+    from aios.sdk.autogen.oai.groq import GroqClient
+    from aios.sdk.autogen.oai.mistral import MistralAIClient
+    from aios.sdk.autogen.oai.together import TogetherClient
 
 logger = logging.getLogger(__name__)
 lock = threading.Lock()
