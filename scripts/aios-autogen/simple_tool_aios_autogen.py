@@ -104,7 +104,7 @@ def main():
     startScheduler()
 
     # Generate a reply.
-    chat_result = user_proxy.initiate_chat(assistant, message="What is 2 + 1?")
+    chat_result = user_proxy.initiate_chat(assistant, message="What is  (2 + 1) / 3?")
 
     stopScheduler()
 

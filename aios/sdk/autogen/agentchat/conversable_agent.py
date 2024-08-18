@@ -14,7 +14,6 @@ from openai import BadRequestError
 from aios.sdk.autogen.agentchat.chat import _post_process_carryover_item
 from aios.sdk.autogen.exception_utils import InvalidCarryOverType, SenderRequired
 from pyopenagi.agents.agent_process import AgentProcessFactory
-from pyopenagi.utils.chat_template import Query
 
 from .._pydantic import model_dump
 from ..cache.cache import AbstractCache
@@ -1343,28 +1342,6 @@ class ConversableAgent(LLMAgent, BaseAgent):
         extracted_response = self._generate_oai_reply_from_client(
             client, self._oai_system_message + messages, self.client_cache
         )
-        return (False, None) if extracted_response is None else (True, extracted_response)
-
-    def generate_oai_reply_aios(
-        self,
-        messages: Optional[List[Dict]] = None,
-        sender: Optional[Agent] = None,
-        config: Optional[OpenAIWrapper] = None,
-    ) -> Tuple[bool, Union[str, Dict, None]]:
-        """Generate a reply using autogen.oai."""
-        if not hasattr(self, "agent_process_factory"):
-            return False, None
-        if messages is None:
-            messages = self._oai_messages[sender]
-
-        response, start_times, end_times, waiting_times, turnaround_times = self.get_response(
-            query=Query(
-                messages=self._oai_system_message + messages,
-                tools=(self.llm_config["tools"] if "tools" in self.llm_config else None)
-            )
-        )
-
-        extracted_response = response.response_message
         return (False, None) if extracted_response is None else (True, extracted_response)
 
     def _generate_oai_reply_from_client(self, llm_client, messages, cache) -> Union[str, Dict, None]:

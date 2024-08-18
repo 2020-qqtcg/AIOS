@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Literal, Optional, Union
+from typing import Callable, Dict, Literal, Optional
 
 from aios.sdk.autogen.runtime_logging import log_new_agent, logging_enabled
 
@@ -35,7 +35,6 @@ Reply "TERMINATE" in the end when everything is done.
         self,
         name: str,
         system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-        llm_config: Optional[Union[Dict, Literal[False]]] = None,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Literal["ALWAYS", "NEVER", "TERMINATE"] = "NEVER",
@@ -65,7 +64,6 @@ Reply "TERMINATE" in the end when everything is done.
             is_termination_msg,
             max_consecutive_auto_reply,
             human_input_mode,
-            llm_config=llm_config,
             description=description,
             **kwargs,
         )
