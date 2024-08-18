@@ -1,0 +1,4 @@
+[submodule "aios/sdk/autogen"]
+	path = aios/sdk/autogen
+	url = https://github.com/dongyuanjushi/autogen.git
+	branch = autogen-aios
