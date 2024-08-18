@@ -12,7 +12,7 @@ from aios.utils.utils import delete_directories
 from aios.utils.utils import (
     parse_global_args,
 )
-from aios.sdk.autogen import ConversableAgent
+from aios.sdk.autogen.autogen import ConversableAgent
 from pyopenagi.agents.agent_process import AgentProcessFactory
 from typing import Annotated, Literal
 
