@@ -20,5 +20,5 @@ cd aios/sdk/autogen
 
 git sparse-checkout init --cone
 
-git sparse-checkout set autogen/autogen
+git sparse-checkout set autogen
 ```

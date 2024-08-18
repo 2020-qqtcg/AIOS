@@ -36,7 +36,9 @@ class GPTLLM(BaseLLM):
                 parsed_tool_calls.append(
                     {
                         "name": function_name,
-                        "parameters": function_args
+                        "parameters": function_args,
+                        "type": tool_call.type,
+                        "id": tool_call.id
                     }
                 )
             return parsed_tool_calls
@@ -64,7 +66,7 @@ class GPTLLM(BaseLLM):
                 model=self.model_name,
                 messages = messages,
                 tools = agent_process.query.tools,
-                tool_choice = "required" if agent_process.query.tools else None,
+                # tool_choice = "required" if agent_process.query.tools else None,
                 max_tokens = self.max_new_tokens
             )
             response_message = response.choices[0].message.content
