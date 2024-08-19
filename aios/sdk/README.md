@@ -14,22 +14,25 @@ contains
 If you want to use sdk, 
 you shoud initiate it by running following code.
 
+If you do not need to make changes to autogen, you can save more space by using a shallow clone:
+
 ```shell
-git submodule update --init --recursive
+sh init_autogen_shallow.sh
 ```
 
-If you don’t want to see the extra agent framework code, you can run:
+If you want a complete commit history of autogen, please run:
+```shell
+sh init_autogen.sh
+```
+
+Or you can init autogen by hand:
 
 ```shell
+git submodule update --init --recursive
+
 cd aios/sdk/autogen
 
 git sparse-checkout init --cone
 
 git sparse-checkout set autogen
-```
-
-or simply run on linux or mac:
-
-```shell
-sh init_autogen.sh
 ```
