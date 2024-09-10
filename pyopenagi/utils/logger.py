@@ -56,9 +56,11 @@ class AgentLogger(BaseLogger):
         super().__init__(logger_name, log_mode)
         self.level_color = {
             "info": (248, 246, 227), # white
+            "error": (255, 0, 0),  # red
+            "warn": (255, 254, 240), # buff
             "executing": (217, 237, 191), # green
             "suspending": (255, 235, 178), # yellow
-            "done": (122, 162, 227) # blue
+            "done": (122, 162, 227), # blue
         }
 
     def load_log_file(self):

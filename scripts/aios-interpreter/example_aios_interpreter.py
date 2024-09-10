@@ -66,6 +66,7 @@ def main():
 
     startScheduler()
 
+    interpreter.verbose = True
     # interpreter.chat("Calculate 10 * 20 / 2")
     # interpreter.chat("Plot the sin function")
     # interpreter.chat("Use the Euclidean algorithm to calculate the greatest common divisor (GCD) of 78782 and 64.")
