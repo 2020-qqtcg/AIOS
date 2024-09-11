@@ -1,8 +1,6 @@
 import os
 
-from pyopenagi.utils.imports import (
-    is_swebench_available
-)
+from pyopenagi.utils.imports import is_swebench_available
 if is_swebench_available():
     from swebench.inference.make_datasets.create_text_dataset import main
 
