@@ -1,9 +1,14 @@
+import time
 from typing import List
 
 from pyopenagi.agents.agent_process import AgentProcessFactory
 from pyopenagi.agents.base_agent import BaseAgent
-from ability import get_agent_ability
+from pyopenagi.agents.experiment.doraemon_agent.moduler.memory.short_term_memory import ShortTermMemory
+from pyopenagi.agents.experiment.doraemon_agent.register.action_register import get_agent_action
+from pyopenagi.agents.experiment.doraemon_agent.register.planning_register import get_agent_planning, DEFAULT_PLANNING
+from pyopenagi.agents.experiment.doraemon_agent.prompt.system_prompt import SYSTEM_PROMPT
 
+_TERMINATE = "<TERMINATE>"
 
 class DoraemonAgent(BaseAgent):
 
@@ -13,24 +18,82 @@ class DoraemonAgent(BaseAgent):
             task_input: str,
             agent_process_factory: AgentProcessFactory,
             log_mode: str,
-            agent_abilities: List[str] | str | None = None,
     ):
         super().__init__(agent_name, task_input, agent_process_factory, log_mode)
 
-        self.abilities = []
-        self.load_abilities(agent_abilities)
+        self.actions = []
+        self.planning = None
+        self.short_term_memory: ShortTermMemory | None = None
 
-    def load_abilities(self, agent_abilities) -> None:
-        not_found_abilities = []
-        for ability_name in agent_abilities:
-            if ability := get_agent_ability(ability_name) is not None:
-                self.abilities.append(ability)
-            else:
-                not_found_abilities.append(ability_name)
-
-        if not_found_abilities:
-            not_found_abilities_str = ', '.join(not_found_abilities)
-            self.logger.log(f"Ability {not_found_abilities_str} does not exist.", "warn")
+        self._load_agent_moduler()
+        self.build_system_instruction()
 
     def run(self):
-        pass
+        while True:
+            result = self.planning.plan(self)
+            if self.is_terminated():
+                break
+
+        self._set_end_success()
+        return self._build_result(result)
+
+    def build_system_instruction(self):
+        self.messages.generate_context("syste", SYSTEM_PROMPT)
+
+    def _load_agent_moduler(self):
+        """Load moduler in agent"""
+        action_name_list = self.config["action"] if "action" in self.config else []
+        planning_name = self.config["planning"] if "planning" in self.config else ""
+
+        self._load_moduler_actions(action_name_list)
+        self._load_moduler_planning(planning_name)
+
+        self.short_term_memory = ShortTermMemory()
+
+    def _load_moduler_actions(self, action_name_list: List[str]) -> None:
+        not_found_action = []
+        for action_name in action_name_list:
+            if action := get_agent_action(action_name) is not None:
+                self.actions.append(action)
+            else:
+                not_found_action.append(action_name)
+
+        if not_found_action:
+            not_found_action_str = ', '.join(not_found_action)
+            self.logger.log(f"Action ({not_found_action_str}) do not exist.", "warn")
+
+    def _load_moduler_planning(self, planning_name: str) -> None:
+        if planning := get_agent_planning(planning_name) is not None:
+            self.planning = planning
+        else:
+            self.planning = DEFAULT_PLANNING
+
+    def is_terminated(self):
+        if _TERMINATE in self.messages[-1]["content"]:
+            return True
+        return False
+
+    def set_monitor_info(self, start_times, waiting_times, turnaround_times):
+        self.request_waiting_times.extend(waiting_times)
+        self.request_turnaround_times.extend(turnaround_times)
+        if self.rounds == 0:
+            self.set_start_time(start_times[0])
+
+    def _set_end_success(self):
+        self.set_status("done")
+        self.set_end_time(time=time.time())
+
+    def _build_result(self, result_message: str):
+        return {
+            "agent_name": self.agent_name,
+            "result": result_message,
+            "rounds": self.rounds,
+            "agent_waiting_time": self.start_time - self.created_time,
+            "agent_turnaround_time": self.end_time - self.created_time,
+            "request_waiting_times": self.request_waiting_times,
+            "request_turnaround_times": self.request_turnaround_times,
+        }
+
+    @property
+    def messages(self):
+        return self.short_term_memory
