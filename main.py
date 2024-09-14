@@ -76,11 +76,15 @@ def main():
         task_input="listen to my yap for 5 seconds and write a response to it"
     )
     """
-
     agent_id = submitAgent(
-        agent_name="example/academic_agent",
-        task_input="Create an Instagram post: Image of a person using a new tech gadget, text highlighting its key features and benefits."
+        agent_name="experiment/doraemon_agent",
+        task_input="1 + 1 = ？User code solve it"
     )
+
+    # agent_id = submitAgent(
+    #     agent_name="example/academic_agent",
+    #     task_input="Create an Instagram post: Image of a person using a new tech gadget, text highlighting its key features and benefits."
+    # )
     # submitAgent(
     #     agent_name="example/cocktail_mixlogist",
     #     task_input="Create a cocktail for a summer garden party. Guests enjoy refreshing, citrusy flavors. Available ingredients include vodka, gin, lime, lemon, mint, and various fruit juices."

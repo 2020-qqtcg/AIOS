@@ -1,17 +1,21 @@
 from abc import ABC, abstractmethod
 from typing import Any
+from pydantic import BaseModel
 
-from pyopenagi.agents.base_agent import BaseAgent
+from pyopenagi.utils.logger import AgentLogger
 
 
-class Planning(ABC):
+class Planning(ABC, BaseModel):
+
+    name: str
 
     @abstractmethod
-    def plan(self, agent: BaseAgent) -> Any:
+    def plan(self, agent, logger: AgentLogger) -> Any:
         """Use plan straregy execute agent
 
         Args:
             agent: agent executing
+            logger: logger to log
 
         Returns: plan result
 

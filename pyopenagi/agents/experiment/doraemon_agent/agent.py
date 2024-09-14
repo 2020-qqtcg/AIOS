@@ -3,10 +3,16 @@ from typing import List
 
 from pyopenagi.agents.agent_process import AgentProcessFactory
 from pyopenagi.agents.base_agent import BaseAgent
-from pyopenagi.agents.experiment.doraemon_agent.moduler.memory.short_term_memory import ShortTermMemory
-from pyopenagi.agents.experiment.doraemon_agent.register.action_register import get_agent_action
-from pyopenagi.agents.experiment.doraemon_agent.register.planning_register import get_agent_planning, DEFAULT_PLANNING
+from pyopenagi.agents.experiment.doraemon_agent.module.action.action import Action
+from pyopenagi.agents.experiment.doraemon_agent.module.memory.short_term_memory import ShortTermMemory
 from pyopenagi.agents.experiment.doraemon_agent.prompt.system_prompt import SYSTEM_PROMPT
+from pyopenagi.agents.experiment.doraemon_agent.register import (
+    get_agent_action,
+    actions_prompt,
+    get_agent_planning,
+    planning_prompt,
+    deault_planning
+)
 
 _TERMINATE = "<TERMINATE>"
 
@@ -21,7 +27,7 @@ class DoraemonAgent(BaseAgent):
     ):
         super().__init__(agent_name, task_input, agent_process_factory, log_mode)
 
-        self.actions = []
+        self.actions = {}
         self.planning = None
         self.short_term_memory: ShortTermMemory | None = None
 
@@ -29,32 +35,46 @@ class DoraemonAgent(BaseAgent):
         self.build_system_instruction()
 
     def run(self):
-        while True:
-            result = self.planning.plan(self)
-            if self.is_terminated():
-                break
+        self.messages.generate_context(role="user", content=self.task_input)
+
+        result = ""
+        while not self.is_terminated():
+            result = self.planning.plan(self, self.logger)
 
         self._set_end_success()
         return self._build_result(result)
 
+    def take_action(self, action_name: str) -> Action:
+        action =  self.actions[action_name] if action_name in self.actions else None
+        if action is None:
+            raise AttributeError(f"Action {action_name} not found")
+        else:
+            return action
+
     def build_system_instruction(self):
-        self.messages.generate_context("syste", SYSTEM_PROMPT)
+        system_prompt = SYSTEM_PROMPT.format(
+            actions=actions_prompt(),
+            planning=planning_prompt(self.planning.name),
+            terminate=_TERMINATE
+        )
+        self.messages.generate_context("system", system_prompt)
 
     def _load_agent_moduler(self):
-        """Load moduler in agent"""
+        """Load module in agent"""
         action_name_list = self.config["action"] if "action" in self.config else []
         planning_name = self.config["planning"] if "planning" in self.config else ""
 
-        self._load_moduler_actions(action_name_list)
-        self._load_moduler_planning(planning_name)
+        self._load_module_actions(action_name_list)
+        self._load_module_planning(planning_name)
 
         self.short_term_memory = ShortTermMemory()
 
-    def _load_moduler_actions(self, action_name_list: List[str]) -> None:
+    def _load_module_actions(self, action_name_list: List[str]) -> None:
         not_found_action = []
         for action_name in action_name_list:
             if action := get_agent_action(action_name) is not None:
-                self.actions.append(action)
+                action = action()
+                self.actions[action_name] = action
             else:
                 not_found_action.append(action_name)
 
@@ -62,14 +82,14 @@ class DoraemonAgent(BaseAgent):
             not_found_action_str = ', '.join(not_found_action)
             self.logger.log(f"Action ({not_found_action_str}) do not exist.", "warn")
 
-    def _load_moduler_planning(self, planning_name: str) -> None:
+    def _load_module_planning(self, planning_name: str) -> None:
         if planning := get_agent_planning(planning_name) is not None:
-            self.planning = planning
+            self.planning = planning()
         else:
-            self.planning = DEFAULT_PLANNING
+            self.planning = deault_planning()
 
     def is_terminated(self):
-        if _TERMINATE in self.messages[-1]["content"]:
+        if _TERMINATE in self.messages.last_message()["content"]:
             return True
         return False
 
@@ -97,3 +117,7 @@ class DoraemonAgent(BaseAgent):
     @property
     def messages(self):
         return self.short_term_memory
+
+    @messages.setter
+    def messages(self, value):
+        pass

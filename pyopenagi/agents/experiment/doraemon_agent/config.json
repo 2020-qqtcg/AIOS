@@ -2,6 +2,7 @@
     "name": "doraemon_agent",
     "description": [],
     "tools": [],
+    "action": [],
     "meta": {
         "author": "example",
         "version": "0.0.1",
