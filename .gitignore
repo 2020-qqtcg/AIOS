@@ -35,7 +35,7 @@ dist/
 downloads
 eggs
 .eggs/
-lib
+# lib
 lib64
 bin
 parts/
@@ -202,3 +202,5 @@ next-env.d.ts
 # metagpt
 metagpt
 workspace
+
+cache

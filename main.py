@@ -4,7 +4,7 @@
 from aios.utils.utils import (
     parse_global_args,
 )
-import os
+
 import warnings
 
 from aios.hooks.llm import useFactory, useKernel, useFIFOScheduler
@@ -25,8 +25,6 @@ def clean_cache(root_directory):
 
 def main():
     # parse arguments and set configuration for this run accordingly
-    main_id = os.getpid()
-    print(f"Main ID is: {main_id}")
     warnings.filterwarnings("ignore")
     parser = parse_global_args()
     args = parser.parse_args()
@@ -60,7 +58,7 @@ def main():
 
     submitAgent, awaitAgentExecution = useFactory(
         log_mode=agent_log_mode,
-        max_workers=64
+        max_workers=500
     )
 
     startScheduler()
