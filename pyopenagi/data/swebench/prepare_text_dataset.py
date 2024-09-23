@@ -1,6 +1,7 @@
 import os
 
 from pyopenagi.utils.imports import is_swebench_available
+
 if is_swebench_available():
     from swebench.inference.make_datasets.create_text_dataset import main
 
@@ -20,12 +21,14 @@ CONFIG = {
     "push_to_hub_user": None,
 }
 
+
 def create_text_dataset():
     """Create agent input with prompt swe-bench supplied
     """
     if os.environ.get("GITHUB_TOKEN", None) is None:
         raise KeyError("GITHUB_TOKEN environment variable is not set. Swe-bench uses it to clone repositories.")
     main(**CONFIG)
+
 
 if __name__ == "__main__":
     create_text_dataset()
