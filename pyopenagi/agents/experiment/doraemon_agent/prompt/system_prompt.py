@@ -6,7 +6,7 @@ Please ignore it when interpreting the content.)
 The Action module provides the ability to interact with the external environment.
 You need to choose the appropriate ability at the right time to assist you in completing tasks. Action includes:
 {actions}
-
+- tool: XXX
 When you decide to use an action, you should specify which action you take. Here is an example:
 
 ===============

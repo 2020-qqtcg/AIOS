@@ -5,6 +5,7 @@ from pyopenagi.agents.experiment.doraemon_agent.register.action_register import 
 from pyopenagi.utils.chat_template import Response
 from pyopenagi.utils.logger import AgentLogger
 
+
 @agent_action("tool",
               "The underlying system supports this feature, and you don't need to do anything extra.")
 class ActionTool(Action):

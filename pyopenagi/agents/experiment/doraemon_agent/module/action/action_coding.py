@@ -4,10 +4,11 @@ from pyopenagi.utils.chat_template import Response
 from pyopenagi.utils.logger import AgentLogger
 
 ACTION_DESC = """
-When you think it is necessary to write code to solve the problem,
-you can use the code_solve tool by indicating that you need to write code through code_solve(question).
-For example, code_solve(What is the result of 1 + 1).
+When you think it is necessary to write code to solve the problem, write code using Markdown format code blocks,
+for example:
+
 """
+
 
 @agent_action("coding", ACTION_DESC)
 class ActionCoding(Action):
@@ -16,5 +17,4 @@ class ActionCoding(Action):
         self.logger = AgentLogger("coding")
 
     def run(self, response: Response):
-
         return

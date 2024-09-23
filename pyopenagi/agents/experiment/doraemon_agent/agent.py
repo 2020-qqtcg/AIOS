@@ -16,6 +16,7 @@ from pyopenagi.agents.experiment.doraemon_agent.register import (
 
 _TERMINATE = "<TERMINATE>"
 
+
 class DoraemonAgent(BaseAgent):
 
     def __init__(
@@ -35,17 +36,19 @@ class DoraemonAgent(BaseAgent):
         self.build_system_instruction()
 
     def run(self):
-        self.messages.generate_context(role="user", content=self.task_input)
+        self.messages.add_message(role="user", content=self.task_input)
 
         result = ""
         while not self.is_terminated():
-            result = self.planning.plan(self, self.logger)
+            planning_result = self.planning.plan(self, self.logger)
+            if _TERMINATE not in planning_result:
+                result = planning_result
 
         self._set_end_success()
         return self._build_result(result)
 
     def take_action(self, action_name: str) -> Action:
-        action =  self.actions[action_name] if action_name in self.actions else None
+        action = self.actions[action_name] if action_name in self.actions else None
         if action is None:
             raise AttributeError(f"Action {action_name} not found")
         else:
@@ -57,7 +60,7 @@ class DoraemonAgent(BaseAgent):
             planning=planning_prompt(self.planning.name),
             terminate=_TERMINATE
         )
-        self.messages.generate_context("system", system_prompt)
+        self.messages.add_message(role="system", content=system_prompt)
 
     def _load_agent_moduler(self):
         """Load module in agent"""
@@ -98,6 +101,7 @@ class DoraemonAgent(BaseAgent):
         self.request_turnaround_times.extend(turnaround_times)
         if self.rounds == 0:
             self.set_start_time(start_times[0])
+        self.rounds += 1
 
     def _set_end_success(self):
         self.set_status("done")

@@ -7,9 +7,9 @@ from pyopenagi.utils.logger import AgentLogger
 
 DESC = """Nothing else need to do."""
 
+
 @agent_planning("normal", DESC)
 class PlanningNormal(Planning):
-
     name: str = "normal"
 
     def plan(self, agent, logger: AgentLogger) -> str:
@@ -38,9 +38,9 @@ class PlanningNormal(Planning):
             assert isinstance(action_tool, ActionTool)
 
             action_result, tool_call_id = action_tool.run(response)
-            agent.messages.generate_context(role="tool", content=action_result, tool_call_id=tool_call_id)
+            agent.messages.add_message(role="tool", content=action_result, tool_call_id=tool_call_id)
         else:
-            agent.messages.generate_context(role="assistant", content=response.response_message)
+            agent.messages.add_message(role="assistant", content=response.response_message)
 
         content = agent.messages.last_message()["content"]
         logger.log(f"{content}\n", "info")

@@ -1,9 +1,8 @@
-from pyopenagi.utils.imports import is_swebench_available
 from argparse import ArgumentParser
 
-if is_swebench_available():
-    from swebench.harness.utils import str2bool
-    from swebench.harness.run_evaluation import main
+
+from swebench.harness.utils import str2bool
+from swebench.harness.run_evaluation import main
 
 if __name__ == "__main__":
     parser = ArgumentParser()

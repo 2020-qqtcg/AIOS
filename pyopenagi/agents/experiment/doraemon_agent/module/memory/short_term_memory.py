@@ -1,37 +1,30 @@
 from typing import List
 
-from pydantic import BaseModel
 
+class ShortTermMemory:
 
-class ShortTermMemory(BaseModel):
+    def __init__(self):
+        self.messages: List[dict] = []
 
-    messages: List[dict] = []
-
-    def generate_context(
-            self, role: str | None = None,
-            content: str | None = None,
-            tool_call_id: int | None = None) -> List[dict]:
-        """Append content into history messages. Generate context from memory messages.
-
-        Args:
-            role: role name
-            content: request content
-            tool_call_id: use when tool call
+    def generate_context(self) -> List[dict]:
+        """Generate context from memory messages.
 
         Returns: llm context with content appending last
 
         """
-        if role is None and content is None:
-            return self.messages
-
-        if tool_call_id:
-            message = {"role": role, "content": content, "tool_call_id": tool_call_id}
-        else:
-            message = {"role": role, "content": content}
-        self.messages.append(message)
         return self.messages
 
-    def add_message(self, message: dict) -> None:
+    def add_message(self, **kwargs) -> None:
+        role = kwargs.get("role", None)
+        content = kwargs.get("content", None)
+        tool_call_id = kwargs.get("tool_call_id", None)
+
+        if tool_call_id is None:
+            self._add_message({"role": role, "content": content})
+        else:
+            self._add_message({"role": role, "content": content, "tool_call_id": tool_call_id})
+
+    def _add_message(self, message: dict) -> None:
         """
         Add message to memory.
         Args:

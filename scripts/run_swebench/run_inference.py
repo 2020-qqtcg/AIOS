@@ -1,5 +1,5 @@
-# This is a main script that tests the functionality of specific agents.
-# It requires no user input.
+import json
+import os.path
 
 from aios.utils.utils import (
     parse_global_args,
@@ -11,7 +11,7 @@ from aios.hooks.llm import useFactory, useKernel, useFIFOScheduler
 
 from aios.utils.utils import delete_directories
 from dotenv import load_dotenv
-
+from datasets import load_from_disk
 
 def clean_cache(root_directory):
     targets = {
@@ -22,8 +22,45 @@ def clean_cache(root_directory):
     }
     delete_directories(root_directory, targets)
 
+def inference_core(input_path, out_path, submitAgent, awaitAgentExecution):
+    text_data = load_from_disk(input_path)
+    text_data_test = text_data["test"]
 
-def main():
+    run_round = min(len(text_data_test), 2)
+    agent_ids = []
+    for i in range(run_round):
+        instance_id = text_data_test[i]["instance_id"]
+        text = text_data_test[i]["text"]
+
+        agent_id = submitAgent(
+            agent_name="experiment/doraemon_agent",
+            task_input=text
+        )
+
+        agent_ids.append({"agent_id": agent_id, "instance_id": instance_id})
+
+    predictions = []
+    count = 0
+    for id_pair in agent_ids:
+        agent_id = id_pair["agent_id"]
+        instance_id = id_pair["instance_id"]
+
+        result = awaitAgentExecution(agent_id)
+
+        prediction = {
+            "instance_id": instance_id,
+            "model_patch": result["result"],
+            "model_name_or_path": "doraemon_agent"
+        }
+
+        count += 1
+        print(f"Prediction complete: {count}/{run_round}")
+        predictions.append(prediction)
+
+    with open(os.path.join(out_path, "predictions.json"), "w", encoding="utf-8") as file:
+        json.dump(predictions, file, ensure_ascii=False, indent=4)
+
+def main(input_path, out_path):
     # parse arguments and set configuration for this run accordingly
     warnings.filterwarnings("ignore")
     parser = parse_global_args()
@@ -49,13 +86,11 @@ def main():
     )
 
     # run agents concurrently for maximum efficiency using a scheduler
-
     startScheduler, stopScheduler = useFIFOScheduler(
         llm=llm,
         log_mode=scheduler_log_mode,
         get_queue_message=None
     )
-
     submitAgent, awaitAgentExecution = useFactory(
         log_mode=agent_log_mode,
         max_workers=500
@@ -63,38 +98,7 @@ def main():
 
     startScheduler()
 
-    # register your agents and submit agent tasks
-    """ submitAgent(
-        agent_name="example/academic_agent",
-        task_input="Find recent papers on the impact of social media on mental health in adolescents."
-    )
-    """
-
-    """
-    submitAgent(
-        agent_name="om-raheja/transcribe_agent",
-        task_input="listen to my yap for 5 seconds and write a response to it"
-    )
-    """
-    agent_id = submitAgent(
-        agent_name="experiment/doraemon_agent",
-        task_input="Write a code to calulate sin(x)."
-    )
-
-    # agent_id = submitAgent(
-    #     agent_name="example/academic_agent",
-    #     task_input="Create an Instagram post: Image of a person using a new tech gadget, text highlighting its key features and benefits."
-    # )
-    # submitAgent(
-    #     agent_name="example/cocktail_mixlogist",
-    #     task_input="Create a cocktail for a summer garden party. Guests enjoy refreshing, citrusy flavors. Available ingredients include vodka, gin, lime, lemon, mint, and various fruit juices."
-    # )
-    # submitAgent(
-    #     agent_name="example/cook_therapist",
-    #     task_input="Develop a low-carb, keto-friendly dinner that is flavorful and satisfying."
-    # )
-
-    awaitAgentExecution(agent_id)
+    inference_core(input_path, out_path, submitAgent, awaitAgentExecution)
 
     stopScheduler()
 
@@ -102,4 +106,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    INPUT_PATH = "/Users/mujian/home/code/python/AIOS/pyopenagi/data/swebench/text_data/SWE-bench__style-3__fs-oracle"
+    OUT_PATH = "/Users/mujian/home/code/python/AIOS/pyopenagi/data/swebench/"
+    main(INPUT_PATH, OUT_PATH)
