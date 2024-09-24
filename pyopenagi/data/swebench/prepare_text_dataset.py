@@ -7,8 +7,8 @@ if is_swebench_available():
 
 # Inspired by `swebench.inference.make_datasets.create_text_dataset`
 # for detailed meanings of the parameters, please refer to `swebench.inference.make_datasets.create_text_dataset`.
-CONFIG = {
-    "dataset_name_or_path": "princeton-nlp/SWE-bench",
+DEFAULT_CONFIG = {
+    "dataset_name_or_path": "princeton-nlp/SWE-bench_Lite",
     "splits": "test",
     "validation_ratio": 0.01,
     "output_dir": "dataset/",
@@ -22,12 +22,21 @@ CONFIG = {
 }
 
 
-def create_text_dataset():
-    """Create agent input with prompt swe-bench supplied
+def create_text_dataset(**kwargs):
+    """
+    Create agent input with prompt swe-bench supplied
+
+    Args:
+        kwargs: refer to the CONFIG.
     """
     if os.environ.get("GITHUB_TOKEN", None) is None:
         raise KeyError("GITHUB_TOKEN environment variable is not set. Swe-bench uses it to clone repositories.")
-    main(**CONFIG)
+
+    for k, v in kwargs.items():
+        if k in DEFAULT_CONFIG:
+            DEFAULT_CONFIG[k] = v
+
+    main(**DEFAULT_CONFIG)
 
 
 if __name__ == "__main__":
