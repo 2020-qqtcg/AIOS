@@ -204,3 +204,4 @@ metagpt
 workspace
 
 cache
+/experiment/dataset/

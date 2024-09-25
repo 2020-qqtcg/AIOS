@@ -1,6 +1,6 @@
 from interpreter import OpenInterpreter
 
-from expirement.agent.experiment_agent import ExpirementAgent
+from experiment.agent.experiment_agent import ExpirementAgent
 from pyopenagi.agents.call_core import CallCore
 from aios.sdk.interpreter.adapter import prepare_interpreter
 
@@ -13,4 +13,5 @@ class InterpreterAgent(CallCore, ExpirementAgent):
 
     def run(self, input_str: str):
         result = self.interpreter.chat(input_str)
-        return result
+        result = result[0] if isinstance(result, list) else result
+        return result["content"]
