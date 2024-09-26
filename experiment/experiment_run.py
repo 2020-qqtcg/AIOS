@@ -3,7 +3,8 @@ import json
 import re
 from json import JSONDecodeError
 
-from datasets import load_from_disk
+from datasets import load_from_disk, load_dataset
+from datasets.exceptions import DatasetNotFoundError
 from tqdm import tqdm
 
 from experiment.agent.experiment_agent import ExpirementAgent
@@ -39,7 +40,9 @@ def write_prediction(instance_id: str, model_patch: str, model_name_or_path: str
     try:
         with open(out_path, "r", encoding="utf-8") as file:
             predictions = json.load(file)
-    except FileNotFoundError or JSONDecodeError:
+    except FileNotFoundError:
+        predictions = []
+    except JSONDecodeError:
         predictions = []
 
     predictions.append(prediction)
@@ -61,8 +64,12 @@ def run_swe_bench(agent: ExpirementAgent, single_data) -> str:
     return parse_patch(result)
 
 
-def main(agent_type: str, data_path: str, out_path: str, on_aios: bool, args):
-    dataset = load_from_disk(data_path)
+def main(agent_type: str, data_path_or_name: str, out_path: str, on_aios: bool, args):
+    try:
+        dataset = load_dataset(data_path_or_name)
+    except DatasetNotFoundError:
+        dataset = load_from_disk(data_path_or_name)
+
     test_data = dataset["test"]
 
     if on_aios:
@@ -81,7 +88,7 @@ if __name__ == '__main__':
 
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument("--agent_type", type=str, default="interpreter")
-    main_parser.add_argument("--data_path", type=str, default="dataset/SWE-bench__style-3__fs-oracle")
+    main_parser.add_argument("--data_path_or_name", type=str, default="princeton-nlp/SWE-bench_oracle")
     main_parser.add_argument("--out_path", type=str, default="prediction.json")
     main_parser.add_argument("--on_aios", action="store_true")
 
@@ -89,3 +96,7 @@ if __name__ == '__main__':
     main_args = main_parser.parse_args(remaining_args)
 
     main(**vars(main_args), args=global_args)
+    #
+    # dataset = load_from_disk("dataset/SWE-bench__style-3__fs-oracle")
+    # test_data = dataset["test"]
+    # print(test_data[0]["text"])
