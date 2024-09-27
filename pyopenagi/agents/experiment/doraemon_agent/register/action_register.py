@@ -36,6 +36,7 @@ def get_agent_action(action_name: str) -> Any:
     else:
         return None
 
+
 def actions_prompt() -> str:
     """
     Get actions prompt

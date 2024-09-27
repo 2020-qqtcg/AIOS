@@ -31,6 +31,7 @@ class DoraemonAgent(BaseAgent):
         self.actions = {}
         self.planning = None
         self.short_term_memory: ShortTermMemory | None = None
+        self.communication = None
 
         self._load_agent_moduler()
         self.build_system_instruction()

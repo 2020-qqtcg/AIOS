@@ -3,6 +3,7 @@ from typing import Any
 _AGENT_PLANNING_MAP = {}
 _AGENT_PLANNING_DESC_MAP = {}
 
+
 def agent_planning(planning_name: str, planning_desc: str):
     """
     register agent planning strategy
@@ -12,6 +13,7 @@ def agent_planning(planning_name: str, planning_desc: str):
         planning_desc: agent planning description
 
     """
+
     def helper(cls):
         _AGENT_PLANNING_MAP[planning_name] = cls
         _AGENT_PLANNING_DESC_MAP[planning_name] = planning_desc
@@ -35,6 +37,7 @@ def get_agent_planning(planning_name: str) -> Any:
     else:
         return None
 
+
 def planning_prompt(planning_name: str) -> str:
     """
     Get the prompt string of the given planning name.
@@ -50,6 +53,7 @@ def planning_prompt(planning_name: str) -> str:
     else:
         planning_prompt_str = ""
     return planning_prompt_str
+
 
 def deault_planning():
     return get_agent_planning("normal")()
