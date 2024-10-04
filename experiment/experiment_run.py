@@ -7,7 +7,7 @@ from datasets import load_from_disk, load_dataset
 from datasets.exceptions import DatasetNotFoundError
 from tqdm import tqdm
 
-from experiment.agent.experiment_agent import ExpirementAgent
+from experiment.agent.experiment_agent import ExpirementAgent, SimpleLLMAgent
 from aios.utils.utils import parse_global_args
 from aios.hooks.llm import aios_starter
 from experiment.agent.interpreter import InterpreterAgent
@@ -15,6 +15,7 @@ from pyopenagi.agents.agent_process import AgentProcessFactory
 
 AGENT_TYPE_MAPPING_AIOS = {
     "interpreter": InterpreterAgent,
+    "gpt": SimpleLLMAgent
 }
 
 
@@ -27,7 +28,25 @@ def parse_patch(agent_result: str):
         patch = match.group(1)
         return patch
     else:
-        return "[None]"
+        pattern = r'<patch>(.*?)</patch>'
+        match = re.search(pattern, agent_result)
+        if match:
+            patch = match.group(1)
+            return patch
+        else:
+            try:
+                with open("wrong_result.json", "r", encoding="utf-8") as file:
+                    predictions = json.load(file)
+            except FileNotFoundError:
+                predictions = []
+            except JSONDecodeError:
+                predictions = []
+
+            predictions.append(agent_result)
+            with open("wrong_result.json", "w", encoding="utf-8") as file:
+                json.dump(predictions, file, ensure_ascii=False, indent=4)
+
+            return "[None]"
 
 
 def write_prediction(instance_id: str, model_patch: str, model_name_or_path: str, out_path: str):
@@ -71,7 +90,6 @@ def main(agent_type: str, data_path_or_name: str, out_path: str, on_aios: bool, 
         dataset = load_from_disk(data_path_or_name)
 
     test_data = dataset["test"]
-
     if on_aios:
         process_factory = AgentProcessFactory()
         with aios_starter(**vars(args)):

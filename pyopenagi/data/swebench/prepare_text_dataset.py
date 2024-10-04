@@ -9,9 +9,9 @@ if is_swebench_available():
 # for detailed meanings of the parameters, please refer to `swebench.inference.make_datasets.create_text_dataset`.
 DEFAULT_CONFIG = {
     "dataset_name_or_path": "princeton-nlp/SWE-bench_Lite",
-    "splits": "test",
+    "splits": ["test"],
     "validation_ratio": 0.01,
-    "output_dir": "dataset/",
+    "output_dir": "experiment/dataset",
     "retrieval_file": None,
     "prompt_style": "style-3",
     "file_source": "oracle",
