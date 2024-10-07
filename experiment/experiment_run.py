@@ -2,9 +2,9 @@ import argparse
 import json
 import re
 from json import JSONDecodeError
+from pathlib import Path
 
 from datasets import load_from_disk, load_dataset
-from datasets.exceptions import DatasetNotFoundError
 from tqdm import tqdm
 
 from experiment.agent.experiment_agent import ExpirementAgent, SimpleLLMAgent
@@ -84,10 +84,10 @@ def run_swe_bench(agent: ExpirementAgent, single_data) -> str:
 
 
 def main(agent_type: str, data_path_or_name: str, out_path: str, on_aios: bool, args):
-    try:
-        dataset = load_dataset(data_path_or_name)
-    except DatasetNotFoundError:
+    if Path(data_path_or_name).exists():
         dataset = load_from_disk(data_path_or_name)
+    else:
+        dataset = load_dataset(data_path_or_name)
 
     test_data = dataset["test"]
     if on_aios:

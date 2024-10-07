@@ -14,7 +14,7 @@ class ExpirementAgent(ABC):
 class SimpleLLMAgent(ExpirementAgent, CallCore):
 
     def __init__(self, agent_process_factory):
-        super().__init__("gpt-4o", agent_process_factory)
+        super().__init__("gpt", agent_process_factory)
 
     def run(self, input_str: str):
         message = {"content": input_str, "role": "user"}
