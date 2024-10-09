@@ -7,46 +7,44 @@ from pathlib import Path
 from datasets import load_from_disk, load_dataset
 from tqdm import tqdm
 
+from experiment.agent.autogen import AutoGenAgent
 from experiment.agent.experiment_agent import ExpirementAgent, SimpleLLMAgent
 from aios.utils.utils import parse_global_args
 from aios.hooks.llm import aios_starter
 from experiment.agent.interpreter import InterpreterAgent
+from experiment.agent.metagpt import MetaGPTAgent
 from pyopenagi.agents.agent_process import AgentProcessFactory
 
 AGENT_TYPE_MAPPING_AIOS = {
     "interpreter": InterpreterAgent,
-    "gpt": SimpleLLMAgent
+    "gpt": SimpleLLMAgent,
+    "metagpt": MetaGPTAgent,
+    "autogen": AutoGenAgent,
 }
 
 
 def parse_patch(agent_result: str):
-    pattern = r'```patch\s*([\s\S]*?)```'
+    patterns = [r'```patch\s*([\s\S]*?)```', r'```diff\s*([\s\S]*?)```', r'<patch>(.*?)</patch>']
 
-    match = re.search(pattern, agent_result)
-
-    if match:
-        patch = match.group(1)
-        return patch
-    else:
-        pattern = r'<patch>(.*?)</patch>'
+    for pattern in patterns:
         match = re.search(pattern, agent_result)
         if match:
             patch = match.group(1)
             return patch
-        else:
-            try:
-                with open("wrong_result.json", "r", encoding="utf-8") as file:
-                    predictions = json.load(file)
-            except FileNotFoundError:
-                predictions = []
-            except JSONDecodeError:
-                predictions = []
 
-            predictions.append(agent_result)
-            with open("wrong_result.json", "w", encoding="utf-8") as file:
-                json.dump(predictions, file, ensure_ascii=False, indent=4)
+    try:
+        with open("wrong_result.json", "r", encoding="utf-8") as file:
+            predictions = json.load(file)
+    except FileNotFoundError:
+        predictions = []
+    except JSONDecodeError:
+        predictions = []
 
-            return "[None]"
+    predictions.append(agent_result)
+    with open("wrong_result.json", "w", encoding="utf-8") as file:
+        json.dump(predictions, file, ensure_ascii=False, indent=4)
+
+    return "[None]"
 
 
 def write_prediction(instance_id: str, model_patch: str, model_name_or_path: str, out_path: str):
