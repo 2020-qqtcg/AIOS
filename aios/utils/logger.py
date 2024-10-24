@@ -107,7 +107,7 @@ class SDKLogger(BaseLogger):
         super().__init__(logger_name, log_mode)
         self.level_color = {
             "info": (248, 246, 227), # white
-            "warn": (255, 201, 74), # yellow
+            "warn": (255, 254, 240), # buff
             "error": (255, 0, 0), # red
         }
 

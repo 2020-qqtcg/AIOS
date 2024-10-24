@@ -12,7 +12,8 @@ from dataclasses import dataclass
 try:
     from interpreter import interpreter
 
-except ImportError:
+except ImportError as e:
+    print(e)
     raise ImportError(
         "Could not import interpreter python package. "
         "Please install it with `pip install open-interpreter`."
