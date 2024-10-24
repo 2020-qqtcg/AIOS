@@ -20,9 +20,9 @@ patch content here
 
 
 class InterpreterAgent(ExpirementAgent):
-    def __init__(self, agent_process_factory):
+    def __init__(self):
         # super().__init__("interpreter", agent_process_factory)
-        prepare_interpreter(agent_process_factory)
+        prepare_interpreter()
         interpreter.messages = []
         interpreter.auto_run = True
         self.interpreter = interpreter

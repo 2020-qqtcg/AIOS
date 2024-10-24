@@ -6,8 +6,8 @@ from experiment.agent.experiment_agent import ExpirementAgent
 
 class MetaGPTAgent(ExpirementAgent):
 
-    def __init__(self, agent_process_factory):
-        prepare_metagpt(agent_process_factory)
+    def __init__(self):
+        prepare_metagpt()
 
     def run(self, input_str: str):
         repo: ProjectRepo = generate_repo("\nI need you read following details, helping me solving issues by changing "

@@ -7,8 +7,8 @@ _TERMINATION = "<TERMINATION>"
 
 
 class AutoGenAgent(ExpirementAgent):
-    def __init__(self, agent_process_factory):
-        prepare_autogen(agent_process_factory)
+    def __init__(self):
+        prepare_autogen()
 
     def run(self, input_str: str):
         assistant_sender = ConversableAgent(

@@ -13,7 +13,6 @@ from aios.utils.utils import parse_global_args
 from aios.hooks.llm import aios_starter
 from experiment.agent.interpreter import InterpreterAgent
 from experiment.agent.metagpt import MetaGPTAgent
-from pyopenagi.agents.agent_process import AgentProcessFactory
 
 AGENT_TYPE_MAPPING_AIOS = {
     "interpreter": InterpreterAgent,
@@ -70,8 +69,8 @@ def write_prediction(instance_id: str, model_patch: str, model_name_or_path: str
     print(f"Write prediction: {prediction}")
 
 
-def creat_agent(process_factory: AgentProcessFactory, agent_type: str) -> ExpirementAgent:
-    agent = AGENT_TYPE_MAPPING_AIOS[agent_type](process_factory)
+def creat_agent(agent_type: str) -> ExpirementAgent:
+    agent = AGENT_TYPE_MAPPING_AIOS[agent_type]()
     return agent
 
 
@@ -81,22 +80,19 @@ def run_swe_bench(agent: ExpirementAgent, single_data) -> str:
     return parse_patch(result)
 
 
-def main(agent_type: str, data_path_or_name: str, out_path: str, on_aios: bool, args):
+def main(agent_type: str, data_path_or_name: str, out_path: str, args):
     if Path(data_path_or_name).exists():
         dataset = load_from_disk(data_path_or_name)
     else:
         dataset = load_dataset(data_path_or_name)
 
     test_data = dataset["test"]
-    if on_aios:
-        process_factory = AgentProcessFactory()
-        with aios_starter(**vars(args)):
-            for data in tqdm(test_data):
-                agent = creat_agent(process_factory, agent_type)
-                patch = run_swe_bench(agent, data)
-                write_prediction(data["instance_id"], patch, agent_type, out_path)
-    else:
-        pass
+
+    with aios_starter(**vars(args)):
+        for data in tqdm(test_data):
+            agent = creat_agent(agent_type)
+            patch = run_swe_bench(agent, data)
+            write_prediction(data["instance_id"], patch, agent_type, out_path)
 
 
 if __name__ == '__main__':
@@ -106,7 +102,6 @@ if __name__ == '__main__':
     main_parser.add_argument("--agent_type", type=str, default="interpreter")
     main_parser.add_argument("--data_path_or_name", type=str, default="princeton-nlp/SWE-bench_oracle")
     main_parser.add_argument("--out_path", type=str, default="prediction.json")
-    main_parser.add_argument("--on_aios", action="store_true")
 
     global_args, remaining_args = parser.parse_known_args()
     main_args = main_parser.parse_args(remaining_args)
