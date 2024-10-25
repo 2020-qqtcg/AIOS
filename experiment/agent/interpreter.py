@@ -1,8 +1,9 @@
 import os
+
 from interpreter import interpreter
 
+from aios.sdk import prepare_framework, FrameworkType
 from experiment.agent.experiment_agent import ExpirementAgent
-from aios.sdk.interpreter.adapter import prepare_interpreter
 
 SYSTEM_PROMPT_WRITE = """\n You can try writing some code to solve the problem, but please note that you are not in the
 problem repository. Must write your final patch into patch.diff. If code is hard to run, just write the patch you
@@ -20,9 +21,9 @@ patch content here
 
 
 class InterpreterAgent(ExpirementAgent):
-    def __init__(self):
-        # super().__init__("interpreter", agent_process_factory)
-        prepare_interpreter()
+    def __init__(self, on_aios: bool = True):
+        if on_aios:
+            prepare_framework(FrameworkType.OpenInterpreter)
         interpreter.messages = []
         interpreter.auto_run = True
         self.interpreter = interpreter

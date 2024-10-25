@@ -38,7 +38,6 @@ def prepare_framework(framework_type: FrameworkType):
     Args:
         framework_type (str): The type of framework to prepare.
     """
-    print(FRAMEWORK_ADAPTER)
     if framework_type.value not in FRAMEWORK_ADAPTER:
         logger.log(f"Framework {framework_type.value} are not supported.", "error")
     else:

@@ -1,14 +1,15 @@
 from autogen import ConversableAgent
 
+from aios.sdk import prepare_framework, FrameworkType
 from experiment.agent.experiment_agent import ExpirementAgent
-from aios.sdk.autogen.adapter import prepare_autogen
 
 _TERMINATION = "<TERMINATION>"
 
 
 class AutoGenAgent(ExpirementAgent):
-    def __init__(self):
-        prepare_autogen()
+    def __init__(self, on_aios: bool = True):
+        if on_aios:
+            prepare_framework(FrameworkType.AutoGen)
 
     def run(self, input_str: str):
         assistant_sender = ConversableAgent(
