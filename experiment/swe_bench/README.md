@@ -9,23 +9,7 @@ pip install -e .
 ```
 
 ## Step 1
-In the root directory, run the following code. You can modify config
-in `pyopenagi.data.swebench.prepare_text_dataset.CONFIG`.
-```shell
-python -m pyopenagi.data.swebench.prepare_text_dataset
-```
-After prepare finished, you will obtain a text dataset under the `output_dir` you
-specified. Which has a format like
-```text
-Dataset({
-    features: ['instance_id', 'text', 'repo', 'base_commit', 'problem_statement', 'hints_text', 'created_at', 'patch', 'test_patch', 'version', 'FAIL_TO_PASS', 'PASS_TO_PASS', 'environment_setup_commit'],
-    num_rows: 2294
-})
-```
-
-## Step 2
-You need to use text dateset as input for your agent. In fact, `instance_id`
-and `text` are enough.
+You need to run `inference.py` to get agent output.
 Your agent's output needs to be in the following format.
 ```text
 {
@@ -34,9 +18,9 @@ Your agent's output needs to be in the following format.
     "model_name_or_path": "<Model name here (i.e. SWE-Llama-13b)>",
 }
 ```
-Collect all agent output as a `.jsonl` file. Like `predictions.jsonl`.
+Collect all agent output as a `.jsonl` or `.json` file. Like `predictions.jsonl`.
 
-## Step 3
+## Step 2
 Run evaluation like this:
 ```shell
 python -m pyopenagi.data.swebench.run_evaluation \
