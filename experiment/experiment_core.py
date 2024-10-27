@@ -1,19 +1,22 @@
-from typing import Any
+from typing import Any, Callable
 
 from pydantic.v1 import BaseModel
 from tqdm import tqdm
 
 from aios.utils.logger import SDKLogger
-from experiment.agent.autogen import AutoGenAgent
+from experiment.agent.autogen import AutoGenAgent, AutoGenAgentGAIA
 from experiment.agent.experiment_agent import SimpleLLMAgent
 from experiment.agent.interpreter import InterpreterAgent
 from experiment.agent.metagpt import MetaGPTAgent
 
+
 AGENT_TYPE_MAPPING_AIOS = {
-    "interpreter": InterpreterAgent,
-    "gpt": SimpleLLMAgent,
-    "metagpt": MetaGPTAgent,
-    "autogen": AutoGenAgent,
+    "swe:interpreter": InterpreterAgent,
+    "swe:gpt": SimpleLLMAgent,
+    "swe:metagpt": MetaGPTAgent,
+    "swe:autogen": AutoGenAgent,
+
+    "gaia:autogen": AutoGenAgentGAIA
 }
 
 logger = SDKLogger("Experiment")
@@ -50,3 +53,12 @@ def run(process_one_func, meta_data: MetaData, write_output_func=None):
     if write_output_func:
         write_output_func(total_result, meta_data.output_file)
     return total_result
+
+
+def run_inference(meta_data: MetaData, process_one_func: Callable, write_output_func: Callable = None):
+
+    run(
+        process_one_func=process_one_func,
+        meta_data=meta_data,
+        write_output_func=write_output_func,
+    )
