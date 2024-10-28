@@ -4,9 +4,9 @@ from pydantic.v1 import BaseModel
 from tqdm import tqdm
 
 from aios.utils.logger import SDKLogger
-from experiment.agent.autogen import AutoGenAgent, AutoGenAgentGAIA
+from experiment.agent.autogen import AutoGenAgent, AutoGenAgentGAIA, AutoGenAgentHumanEval
 from experiment.agent.experiment_agent import SimpleLLMAgent
-from experiment.agent.interpreter import InterpreterAgent
+from experiment.agent.interpreter import InterpreterAgent, InterpreterAgentHumanEval
 from experiment.agent.metagpt import MetaGPTAgent
 
 
@@ -16,7 +16,10 @@ AGENT_TYPE_MAPPING_AIOS = {
     "swe:metagpt": MetaGPTAgent,
     "swe:autogen": AutoGenAgent,
 
-    "gaia:autogen": AutoGenAgentGAIA
+    "gaia:autogen": AutoGenAgentGAIA,
+
+    "humaneval:autogen": AutoGenAgentHumanEval,
+    "humaneval:interpreter": InterpreterAgentHumanEval,
 }
 
 logger = SDKLogger("Experiment")

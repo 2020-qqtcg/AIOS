@@ -1,12 +1,20 @@
 import json
 import re
 from typing import List
-
 from datasets import load_dataset
 from aios.hooks.llm import aios_starter
 from experiment.agent.experiment_agent import ExpirementAgent
-from experiment.experiment_core import MetaData, run_inference, AGENT_TYPE_MAPPING_AIOS, logger
+from experiment.experiment_core import logger, MetaData, AGENT_TYPE_MAPPING_AIOS, run_inference
 from experiment.utils import get_args
+
+
+def parse_result(result: str):
+
+    match = re.search(r'```python\s*([\s\S]*?)```', result)
+    if match:
+        result = match.group(1)
+
+    return result
 
 
 def write_output_func(result_list: List, output_file: str):
@@ -19,24 +27,19 @@ def process_one_func(data, meta_data: MetaData):
     if meta_data.on_aios:
         with aios_starter(**meta_data.aios_args):
             agent: ExpirementAgent = AGENT_TYPE_MAPPING_AIOS[meta_data.agent_type](meta_data.on_aios)
-            result = agent.run(data["Question"])
-
-            match = re.search(r'FINAL ANSWER: (.+)', result)
-            if match:
-                result = match.group(1)
+            result = agent.run(data["prompt"])
+            result = parse_result(result)
 
             prediction = {
                 "task_id": data["task_id"],
                 "result": result,
             }
             return prediction
+
     else:
         agent: ExpirementAgent = AGENT_TYPE_MAPPING_AIOS[meta_data.agent_type](meta_data.on_aios)
-        result = agent.run(data["Question"])
-
-        match = re.search(r'FINAL ANSWER: (.+)', result)
-        if match:
-            result = match.group(1)
+        result = agent.run(data["prompt"])
+        result = parse_result(result)
 
         prediction = {
             "task_id": data["task_id"],
@@ -48,8 +51,8 @@ def process_one_func(data, meta_data: MetaData):
 if __name__ == '__main__':
     main_args, global_args = get_args()
 
-    agent_type = "gaia:" + main_args.agent_type
-    dataset = load_dataset(main_args.data_name, "2023_all", split=main_args.split)
+    agent_type = "humaneval:" + main_args.agent_type
+    dataset = load_dataset(main_args.data_name, split=main_args.split)
 
     meta = MetaData(
         dataset=dataset,
