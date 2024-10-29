@@ -24,11 +24,11 @@ class AutoGenAgent(ExpirementAgent):
 
         assistant_recipient = ConversableAgent(
             name="assistant_2",
-            is_termination_msg=lambda msg: self._TERMINATION in msg["content"],
+            is_termination_msg=lambda msg: msg.get("content") is not None and self._TERMINATION in msg["content"],
             human_input_mode="NEVER"
         )
 
-        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str)
+        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str, max_turns=20)
 
         chat_history = chat_result.chat_history
         for message in reversed(chat_history):
@@ -62,7 +62,7 @@ class AutoGenAgentGAIA(ExpirementAgent):
     def run(self, input_str: str):
         assistant_sender = ConversableAgent(
             name="User",
-            is_termination_msg=lambda msg: self._TERMINATION in msg["content"],
+            is_termination_msg=lambda msg: msg.get("content") is not None and self._TERMINATION in msg["content"],
             human_input_mode="NEVER"
         )
 
@@ -81,7 +81,7 @@ class AutoGenAgentGAIA(ExpirementAgent):
             assistant_sender.register_for_execution(name=tool["name"])(tool["function"])
 
         # start chat
-        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str)
+        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str, max_turns=20)
 
         chat_history = chat_result.chat_history
         for message in reversed(chat_history):
@@ -116,7 +116,7 @@ class AutoGenAgentHumanEval(ExpirementAgent):
     def run(self, input_str: str):
         assistant_sender = ConversableAgent(
             name="User",
-            is_termination_msg=lambda msg: self._TERMINATION in msg["content"],
+            is_termination_msg=lambda msg: msg.get("content") is not None and self._TERMINATION in msg["content"],
             human_input_mode="NEVER"
         )
 
@@ -127,7 +127,7 @@ class AutoGenAgentHumanEval(ExpirementAgent):
         )
 
         # start chat
-        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str)
+        chat_result = assistant_sender.initiate_chat(assistant_recipient, message=input_str, max_turns=20)
 
         chat_history = chat_result.chat_history
         for message in reversed(chat_history):

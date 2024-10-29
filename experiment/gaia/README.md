@@ -2,7 +2,7 @@
 ```shell
 python -m experiment.humaneval.inference \
   --data_name gaia-benchmark/GAIA \
-  --split test \
+  --split validation \
   --output_file experiment/gaia_prediction.json \
   --on_aios \
 #  --max_num 1 \
