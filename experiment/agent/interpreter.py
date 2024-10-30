@@ -64,13 +64,12 @@ class InterpreterAgent(ExpirementAgent):
 class InterpreterAgentHumanEval(ExpirementAgent):
 
     SYSTEM_PROMPT = """You will receive a function definition and comments. You need to help me complete this function.
-
     Give me final output in the format:
     <FINAL ANSWER>
-        YOUR FINAL ANSWER (YOUR FINAL ANSWER must be a piece of code that you want to add. The final result must remove
-         the function definition and function description provided in the problem statement, as well as any unit test
-         code you added.)
-    </FINAL ANSWER> """
+        YOUR FINAL ANSWER (YOUR FINAL ANSWER must be a piece of code that you want to add. Just
+        contains what you add, don't contains original definition and comments)
+    </FINAL ANSWER>
+    """
 
     def __init__(self, on_aios: bool = True):
         if on_aios:
@@ -91,7 +90,8 @@ class InterpreterAgentHumanEval(ExpirementAgent):
             print(f"IndexError: {e}")
             return str(result)
 
-        print(f"Interterper result is: {result} \n")
+        print(f"Interterper result is: \n{result} \n")
+
         if isinstance(result, dict):
             result_content = result["content"]
 
@@ -101,11 +101,15 @@ class InterpreterAgentHumanEval(ExpirementAgent):
                     {result_content}
                     ```"""
             elif result["type"] == "message":
-                match = re.search(r'<FINAL ANSWER>\s*([\s\S]*?)</FINAL ANSWER>', result_content)
-                if match:
-                    result_content = match.group(1)
+                pattern = r"<FINAL ANSWER>\n(.*?)\n</FINAL ANSWER>"
+                matches = re.findall(pattern, result_content, re.DOTALL)
+
+                if matches:
+                    result_content = "\n".join(matches)
+                # match = re.search(r'<FINAL ANSWER>\s*([\s\S]*?)</FINAL ANSWER>', result_content)
+                # if match:
+                #     result_content = match.group(1)
         else:
             result_content = result
 
-        print(f"Interterper result is: {result_content} \n")
         return result_content

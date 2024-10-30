@@ -133,8 +133,7 @@ class AutoGenAgentHumanEval(ExpirementAgent):
         for message in reversed(chat_history):
             if self._TERMINATION in message["content"]:
                 result = message["content"]
-
-                print(f"AutoGen result is: {result}")
+                print(f"AutoGen result is: \n{result}")
                 return result
 
         return ""

@@ -9,20 +9,18 @@ from experiment.utils import get_args
 
 
 def parse_result(result: str):
-    match = re.search(r'```python\s*([\s\S]*?)```', result)
-    if match:
-        result = match.group(1)
+    pattern = r"```python\n(.*?)\n```"
+    matches = re.findall(pattern, result, re.DOTALL)
 
-    if not result.startswith("def") or not result.startswith("import"):
-        result += "    "
+    if matches:
+        result = "\n".join(matches)
+    else:
+        # check if surrounded by <FINAL ANSWER>
+        pattern = r"<FINAL ANSWER>\n(.*?)\n</FINAL ANSWER>"
+        matches = re.findall(pattern, result, re.DOTALL)
 
-    code_lines = result.split("\n")
-    for line in code_lines[:]:
-        if line.startswith("def"):
-            code_lines.remove(line)
-        elif line.startswith("import"):
-            line += "    "
-    result = "\n".join(code_lines)
+        if matches:
+            result = "\n".join(matches)
 
     return result
 
@@ -79,4 +77,5 @@ if __name__ == '__main__':
         meta_data=meta,
         process_one_func=process_one_func,
         write_output_func=write_output_func,
+        max_workers=10
     )

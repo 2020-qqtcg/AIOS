@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable
 
 from pydantic.v1 import BaseModel
@@ -35,33 +36,39 @@ class MetaData(BaseModel):
     aios_args: dict
 
 
-def run(process_one_func, meta_data: MetaData, write_output_func=None):
+def run(process_one_func, meta_data: MetaData, write_output_func=None, max_workers=1):
     total_result = []
     if meta_data.split:
         dataset = meta_data.dataset[meta_data.split]
     else:
         dataset = meta_data.dataset
 
-    for data in tqdm(dataset):
-        if meta_data.max_num is not None:
-            if meta_data.max_num > 0:
-                meta_data.max_num -= 1
-            else:
-                logger.log(f"Max num {meta_data.max_num} reached", level="info")
-                break
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        for data in dataset:
+            if meta_data.max_num is not None:
+                if meta_data.max_num > 0:
+                    meta_data.max_num -= 1
+                else:
+                    logger.log(f"Max num {meta_data.max_num} reached", level="info")
+                    break
 
-        result = process_one_func(data, meta_data)
-        total_result.append(result)
+            futures.append(executor.submit(process_one_func, data, meta_data))
 
-    if write_output_func:
-        write_output_func(total_result, meta_data.output_file)
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            result = future.result()
+            total_result.append(result)
+
+        if write_output_func:
+            write_output_func(total_result, meta_data.output_file)
     return total_result
 
 
-def run_inference(meta_data: MetaData, process_one_func: Callable, write_output_func: Callable = None):
+def run_inference(meta_data: MetaData, process_one_func: Callable, write_output_func: Callable = None, max_workers=1):
 
     run(
         process_one_func=process_one_func,
         meta_data=meta_data,
         write_output_func=write_output_func,
+        max_workers=max_workers
     )
