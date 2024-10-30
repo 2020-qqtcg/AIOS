@@ -29,7 +29,9 @@ def parse_result(result: str):
 
 def write_output_func(result_list: List, output_file: str):
     with open(output_file, "w", encoding="utf-8") as file:
-        json.dump(result_list, file, ensure_ascii=False, indent=4)
+        for result in result_list:
+            json_line = json.dumps(result)
+            file.write(json_line + "\n")
     logger.log(f"Write results num: {len(result_list)}", level="info")
 
 
