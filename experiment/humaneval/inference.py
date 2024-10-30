@@ -9,10 +9,20 @@ from experiment.utils import get_args
 
 
 def parse_result(result: str):
-
     match = re.search(r'```python\s*([\s\S]*?)```', result)
     if match:
         result = match.group(1)
+
+    if not result.startswith("def") or not result.startswith("import"):
+        result += "    "
+
+    code_lines = result.split("\n")
+    for line in code_lines[:]:
+        if line.startswith("def"):
+            code_lines.remove(line)
+        elif line.startswith("import"):
+            line += "    "
+    result = "\n".join(code_lines)
 
     return result
 
@@ -32,7 +42,7 @@ def process_one_func(data, meta_data: MetaData):
 
             prediction = {
                 "task_id": data["task_id"],
-                "result": result,
+                "completion": result,
             }
             return prediction
 
@@ -43,7 +53,7 @@ def process_one_func(data, meta_data: MetaData):
 
         prediction = {
             "task_id": data["task_id"],
-            "result": result,
+            "completion": result,
         }
         return prediction
 
